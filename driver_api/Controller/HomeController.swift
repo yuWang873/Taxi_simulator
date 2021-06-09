@@ -14,7 +14,6 @@ private let annotationIdentifer = "DriverAnnotation"
 private enum ActionButtonConfiguration{
     case showMenu
     case dismissActionView
-    
     init(){
         self = .showMenu
     }
@@ -43,6 +42,8 @@ class HomeController: UIViewController {
             if user?.accountType == .passenger{
                 fetchDrivers()
                 configureLocationInputActivationView()
+                configureRideActionView()
+                configureTableView()
                 observeCurrentTrip()
             }else{
                 configureDriverUI()
@@ -80,7 +81,7 @@ class HomeController: UIViewController {
         checkIfUserIsLoggedIn()
         enableLoctionServices()
 
-        signOut()
+        //signOut()
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -184,8 +185,8 @@ class HomeController: UIViewController {
     
     //MARK: - Helper Functions
     func configure(){
-        configureUI()
         fetchUserData()
+        configureUI()
 
     }
     
@@ -202,12 +203,10 @@ class HomeController: UIViewController {
     
     func configureUI() {
         configureMapView()
-        configureRideActionView()
         
         view.addSubview(btn_action)
         btn_action.anchor(top:view.safeAreaLayoutGuide.topAnchor, left: view.leftAnchor, paddingTop: 16, paddingLeft: 20, width: 30, height: 30)
-        
-        configureTableView()
+
     }
     
     func configureDriverUI(){
@@ -356,6 +355,11 @@ private extension HomeController{
         let region = MKCoordinateRegion(center: coordinate, latitudinalMeters: 2000, longitudinalMeters: 2000)
         mapView.setRegion(region, animated: true)
     }
+    
+    func setCustomRegion(withCoordiantes coordinates: CLLocationCoordinate2D){
+        let region = CLCircularRegion(center: coordinates, radius: 100, identifier: "pickup")
+        locationManager?.startMonitoring(for: region)
+    }
 }
 
 // MARK: - MapView Delegate
@@ -385,14 +389,22 @@ extension HomeController: MKMapViewDelegate{
             lineRenderer.lineWidth = 4
             return lineRenderer
         }
-        return MKOverlayRenderer()        
+        return MKOverlayRenderer()
     }
 }
 
-// MARK: - Location Service
-extension HomeController{
+// MARK: - CLLocation Manager Delegate
+extension HomeController: CLLocationManagerDelegate{
+    func locationManager(_ manager: CLLocationManager, didStartMonitoringFor region: CLRegion) {
+        print("Start monitoring for region\(region)")
+    }
+    
+    func locationManager(_ manager: CLLocationManager, didEnterRegion region: CLRegion) {
+        print("Driver did enter passenger region")
+    }
+    
     func enableLoctionServices(){
-        
+        locationManager?.delegate = self
         switch locationManager?.authorizationStatus{
         case .notDetermined:
             print("Authentication Not Determined")
@@ -528,6 +540,7 @@ extension HomeController: RideActionViewDelegate{
             self.removeAnnotationsAndOverlays()
             //self.actionButton.setImage(#imageLiteral(resourceName: "baseline_menu_black_36dp").withRenderingMode(.alwaysOriginal), for: .normal)
             self.actionButtonConfig = .dismissActionView
+            self.inputActivationView.alpha = 1
         }
     }
 }
@@ -540,6 +553,8 @@ extension HomeController: PickupControllerDelegate{
         anno.coordinate = trip.pickupCoordinates
         mapView.addAnnotation(anno)
         mapView.selectAnnotation(anno, animated: true)
+        
+        setCustomRegion(withCoordiantes: trip.pickupCoordinates)
         
         let placemark = MKPlacemark(coordinate: trip.pickupCoordinates)
         let mapItem = MKMapItem(placemark: placemark)
