@@ -42,11 +42,11 @@ class HomeController: UIViewController {
             if user?.accountType == .passenger{
                 fetchDrivers()
                 configureLocationInputActivationView()
-                configureRideActionView()
                 configureTableView()
                 observeCurrentTrip()
             }else{
                 configureDriverUI()
+                
                 
             }
         }
@@ -203,7 +203,7 @@ class HomeController: UIViewController {
     
     func configureUI() {
         configureMapView()
-        
+        configureRideActionView()
         view.addSubview(btn_action)
         btn_action.anchor(top:view.safeAreaLayoutGuide.topAnchor, left: view.leftAnchor, paddingTop: 16, paddingLeft: 20, width: 30, height: 30)
 
